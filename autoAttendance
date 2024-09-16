@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# Get the absolute path of this script (following symlink, if present)
+dirName=$(dirname $(readlink -f $0))
+
+# Check if relevant directories exist
+if [ ! -d ./current-sheets/ ]
+then
+	echo "Cannot find current-sheets directory, exiting"
+	exit
+fi
+
+if [ ! -d ./images/ ]
+then
+	echo "Cannot find images directory, exiting"
+	exit
+fi
+
+# Move old filled sheet to archive
+if [ ! -d ./archive/ ]
+then
+	mkdir ./archive
+	echo "Created ./archive"
+fi
+
+# Convert jpgs to pngs
+for img in ./temp/*.jpg
+do
+	ffmpeg -i $img ${img%.*}.png -loglevel fatal # Pattern matching (i%x removes the shortest match of x from the end of i)
+done
+
+mv *-Attendance.csv ./archive
+
+# Record attendance for this rehearsal
+mainPath="$dirName/main.py"
+if [ -z $1 ]
+then
+	rehearsalDate="today"
+else
+	rehearsalDate=$1
+fi
+imgDir="$(pwd)/images/"
+tablesDir="$(pwd)/current-sheets/"
+python3 $mainPath $rehearsalDate $imgDir $tablesDir 4 1 Brass Percussion Strings Wind Conductor
+
+echo "FINISHED"
