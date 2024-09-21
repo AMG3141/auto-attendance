@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from scipy.signal import convolve2d
 import pandas as pd
 
+SHOW_ALL_FIGS = False # Only set this to true when you want to see the big convolutions and line plots etc. Normal showFigs will just show rows/cols
+
 '''
 Takes a binary image of a table where the table and data are non-zero and the background is zero. Returns arrays containing the coordinates of the rows and columns of the table.
 '''
@@ -15,19 +17,20 @@ def getCoordsRowsCols(image, verbose = False, showFigs = False, figTitle = None)
 	if verbose:
 		print("Performing convolutions")
 		print("Vertical")
-	if showFigs: vert = convolve2d(image, maskV) # Better for visualisation
+	if showFigs and SHOW_ALL_FIGS: vert = convolve2d(image, maskV) # Better for visualisation
 	else:
 		vert = convolve2d(image, maskV, mode = "valid") # Wayyyy more efficient
 		vert = vert.T # Makes life easier
 
 	if verbose:
 		print("Horizontal")
-	if showFigs: horiz = convolve2d(image, maskH) # Better for visualisation
-	else: horiz = convolve2d(image, maskH, mode = "valid") # Wayyyy more efficient
+	if showFigs and SHOW_ALL_FIGS: horiz = convolve2d(image, maskH) # Better for visualisation
+	else:
+		horiz = convolve2d(image, maskH, mode = "valid") # Wayyyy more efficient
 
 	if verbose: print("Done")
 
-	if showFigs:
+	if showFigs and SHOW_ALL_FIGS:
 		plt.imshow(vert, cmap = "Greys")
 		plt.title(figTitle)
 		plt.show()
@@ -37,11 +40,11 @@ def getCoordsRowsCols(image, verbose = False, showFigs = False, figTitle = None)
 		plt.show()
 
 	# Calculate the the mean value of the convolved images by either row or column (if we didn't do the better way)
-	if showFigs:
+	if showFigs and SHOW_ALL_FIGS:
 		vert = np.mean(vert, axis = 0)
 		horiz = np.mean(horiz, axis = 1)
 
-	if showFigs:
+	if showFigs and SHOW_ALL_FIGS:
 		plt.subplot(1, 2, 1)
 		plt.plot(vert, label = "Vertical")
 		plt.hlines(np.mean(vert), 0, len(vert), "r", label = "$\mu$")
@@ -87,13 +90,17 @@ def getCoordsRowsCols(image, verbose = False, showFigs = False, figTitle = None)
 	return horizOutliers, vertOutliers
 
 # Go through an image using the given rows and columns and look for filled in cells in rows lower than or equal to the start row and in the column col
-def findFilledCells(image, rows, cols, startRow, col, threshold = 0.005, buffer = 2, verbose = False, showFigs = False, figTitle = None):
+def findFilledCells(image, rows, cols, startRow, col, threshold = 0.005, buffer = 15, verbose = False, showFigs = False, figTitle = None):
 	result = np.array([""] * (len(rows) - 1))# np.zeros(len(rows) - 1)
 	for i in range(startRow, len(result)):
-		left = rows[i] + buffer
-		right = rows[i + 1] - buffer
-		top = cols[col] + buffer
-		bottom = cols[col + 1] - buffer
+		try:
+			left = rows[i] + buffer
+			right = rows[i + 1] - buffer
+			top = cols[col] + buffer
+			bottom = cols[col + 1] - buffer
+		except IndexError:
+			print(f"***{figTitle} failed. Defaulting to N/A.***")
+			return ["N/A"] * len(rows)
 
 		if np.sum(image[left:right, top:bottom]) / ((right - left) * (bottom - top)) > threshold:
 			if verbose: print(f"Value found in row {i} ({np.sum(image[left:right, top:bottom])}, {((right - left) * (bottom - top))})")

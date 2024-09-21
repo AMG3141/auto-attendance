@@ -23,13 +23,15 @@ then
 	echo "Created ./archive"
 fi
 
+mv *-Attendance.csv ./archive
+
 # Convert jpgs to pngs
-for img in ./temp/*.jpg
+unzip ./images/*zip -d ./images/
+rm ./images/*zip
+for img in ./images/*.jpg
 do
 	ffmpeg -i $img ${img%.*}.png -loglevel fatal # Pattern matching (i%x removes the shortest match of x from the end of i)
 done
-
-mv *-Attendance.csv ./archive
 
 # Record attendance for this rehearsal
 mainPath="$dirName/main.py"

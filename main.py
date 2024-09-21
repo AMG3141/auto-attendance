@@ -33,10 +33,10 @@ for section in imgSections:
 	for i, path in enumerate([file for file in listdir(imgPath) if section in file and file[-4:] == ".png"]):
 		# Load image(s)
 		image = np.asarray(Image.open(f"{imgPath}/{path}").convert("L"))
-		image = 1 - np.int32(image > 128)
+		image = 1 - np.int32(image > 100)
 
 		# Extract information for this page
-		rows, cols = getCoordsRowsCols(image)#, True, True)
+		rows, cols = getCoordsRowsCols(image, True, True, figTitle = f"{section}-{i}")
 
 		# Get the filled cells on this page and append it to the section
 		sectionFilledCells.append(findFilledCells(image, rows, cols, 1, 1, showFigs = True, figTitle = f"{section}-{i}"))
@@ -45,9 +45,14 @@ for section in imgSections:
 	sectionFilledCells = np.array(sectionFilledCells).flatten()
 
 	# Load a blank sheet and fill it in
-	blankSheet = pd.read_csv(f"{csvPath}/{rehearsalDate}-{section}.csv", index_col = "ID")
-	blankSheet["Present"] = sectionFilledCells[1:]
-	filledSheets.append(blankSheet)
+	try:
+		sheet = pd.read_csv(f"{csvPath}/{rehearsalDate}-{section}.csv", index_col = "ID")
+		sheet["Present"] = sectionFilledCells[1:]
+	except ValueError:
+		print(f"***{section}-{i} failed. Defaulting to N/A.***")
+		sheet["Present"] = ["N/A"] * len(sheet)
+	finally:
+		filledSheets.append(sheet)
 
 for section in presentSections:
 	# Load the blank sheet and fill it in with all present
