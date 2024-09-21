@@ -25,6 +25,9 @@ fi
 
 mv *-Attendance.csv ./archive
 
+# Remove old images (on drive anyway)
+rm ./images/*
+
 # Convert jpgs to pngs
 unzip ./images/*zip -d ./images/
 rm ./images/*zip
